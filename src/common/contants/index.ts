@@ -9,6 +9,7 @@ export enum Role {
     CUSTOMER = 'CUSTOMER'
 }
 
+export const ORDER_REPOSITORY = 'ORDER_REPOSITORY';
 export enum PrintingStatus {
     PENDING = 'PENDING',
     CANCELLED = 'CANCELLED',
