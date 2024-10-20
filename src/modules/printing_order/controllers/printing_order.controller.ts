@@ -69,13 +69,14 @@ export class PrintingOrderController {
         @Res() res
     ) {
         try {
-            const update = this.printingOrderService.updateOrder(id, updateOrderDto);
-            if (!update){
+            const update = await this.printingOrderService.updateOrder(id, updateOrderDto);
+            if (update == null){
                 this.response.initResponse(false, "An error occurs. Please try again", null);
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
+            } else if (update) {
+                this.response.initResponse(true, "Update successfully", update);
+                return res.status(HttpStatus.OK).json(this.response);
             }
-            this.response.initResponse(true, "Update successfully", update);
-            return res.status(HttpStatus.OK).json(this.response);
         } catch(error) {
             console.log(error);
             this.response.initResponse(false, "An error occurs. Please try again", null);
@@ -86,13 +87,15 @@ export class PrintingOrderController {
     @Delete(':id')
     async deleteOrder(@Param('id') id: string, @Res() res) {
         try {
-            const del = this.printingOrderService.deleteOrder(id);
-            if (!del){
+            const del = await this.printingOrderService.deleteOrder(id);
+            if (del == false){
                 this.response.initResponse(false, "An error occurs. Please try again", null);
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
             }
-            this.response.initResponse(true, "Delete successfully", del);
-            return res.status(HttpStatus.OK).json(this.response);
+            if (del == true){
+                this.response.initResponse(true, "Delete successfully", del);
+                return res.status(HttpStatus.OK).json(this.response);
+            }
         } catch(error) {
             console.log(error);
             this.response.initResponse(false, "An error occurs. Please try again", null);
