@@ -1,20 +1,42 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put } from "@nestjs/common";
 import { DocumentService } from "./document.service";
-import { catchError } from "rxjs";
-import { error } from "console";
+import { CreateDocumentDto } from "./document.dto";
 
-@Controller()
+@Controller('document')
 export class DocumentController {
-    constructor(private readonly documentService: DocumentService) {}
+    constructor(
+        private readonly documentService: DocumentService,
+    ) { }
 
-    @Post()
-    async createDocument(@Body() createDocumentDto: { name: string; mimeType: string; numPages: number }){
-        try {
-            // Pass the received data to the service method
-            return await this.documentService.createDocument(createDocumentDto);
-        } catch (error) {
-            console.error('Error in DocumentController:', error);
-            throw new Error('Could not create document in controller');
-        }
-    }   
+
+    @Get(':id')
+    @HttpCode(HttpStatus.OK)
+    async getDocumentById(@Param('id') id: string) {
+        return await this.documentService.getDocumentById(id);
+    }
+
+    @Get('page/:pageNumber')
+    @HttpCode(HttpStatus.OK)
+    async getDocumentsByPage(@Param('pageNumber') pageNumber: number) {
+        const pageSize = 5;
+        return await this.documentService.getDocumentsByPage(pageNumber, pageSize);
+    }
+
+    @Post('create')
+    @HttpCode(HttpStatus.CREATED)
+    async createDocument(@Body() data: CreateDocumentDto) {
+        return await this.documentService.createDocument(data);
+    }
+
+    @Put(':id')
+    @HttpCode(HttpStatus.OK)
+    async updateDocument(@Param('id') id:string, @Body() data: CreateDocumentDto) {
+        return await this.documentService.updateDocument(id, data);
+    }
+    
+    @Delete(':id')
+    @HttpCode(HttpStatus.OK)
+    async deleteDocument(@Param('id') id:string) {
+        return await this.documentService.deleteDocument(id);
+    }
 }
