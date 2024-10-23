@@ -1,7 +1,7 @@
 import { UUID } from "crypto";
 import { UUIDV4 } from "sequelize";
-import { Column, DataType, Default, HasMany, HasOne, Model, PrimaryKey, Table } from "sequelize-typescript";
-import { PrinterLocation } from "./printer_location.entity";
+import { Column, DataType, Default, HasMany, Model, PrimaryKey, Table, ForeignKey } from "sequelize-typescript";
+import { PrinterLocation } from "../printer_location/printer_location.entity";
 import { PrintingOrder } from "../printing_order/printing_order.entity";
 
 @Table
@@ -20,7 +20,8 @@ export class Printer extends Model<Printer> {
     @Column(DataType.BOOLEAN)
     active: boolean;
 
-    @HasOne(() => PrinterLocation)
+    @ForeignKey(() => PrinterLocation)
+    @Column(DataType.UUID)
     location: PrinterLocation;
 
     @HasMany(() => PrintingOrder)
