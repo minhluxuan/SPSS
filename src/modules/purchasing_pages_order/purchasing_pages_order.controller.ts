@@ -1,19 +1,32 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, Res, HttpStatus } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Res, Req, HttpStatus, UseGuards, ForbiddenException } from '@nestjs/common';
 import { PurchasingPagesOrderService } from './purchasing_pages_order.service';
-import { PurchasingPagesOrder } from './purchasing_pages_order.entity';
+import { CreatePPODto } from './dtos/createPPO.Dto';
+import { UpdatePPODto } from './dtos/updatePPO.Dto';
+import { Response } from '../response/response.entity';
+import { SPSO_REPOSITORY } from 'src/common/contants';
+import { JwtAuthGuard } from 'src/common/guards/authenticate.guard';
 
 @Controller('purchasing_pages_oder')
 export class PurchasingPagesOrderController {
-   constructor(private readonly PPOService : PurchasingPagesOrderService){}
+   constructor(
+      private readonly PPOService : PurchasingPagesOrderService,
+      private readonly response : Response
+   ){}
 
+   @UseGuards(JwtAuthGuard)
    @Post()
-   async createPPO(@Body() data: PurchasingPagesOrder, @Res() res){
+   async createPPO(@Body() data: CreatePPODto,@Req() req, @Res() res){
+      if (!req.user || !req.user.id) {
+         throw new ForbiddenException("User is not allowed to access this resource");
+      }
       try{
-         await this.PPOService.create(data)
-         return res.status(HttpStatus.CREATED).json({message : 'Successfully created purchasing page order'})
+         await this.PPOService.create({...data, CustomerID: req.user.id})
+         this.response.initResponse(true, 'Successfully created purchasing page order', null )
+         return res.status(HttpStatus.CREATED).json(this.response)
       }
       catch(err){
-         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: `Create purchasing page order unsuccessfully`, ERROR: `${err}`})
+         this.response.initResponse(false, `Create purchasing page order unsuccessfully, ERROR: ${err}`, null)
+         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response)
       }
    }
 
@@ -21,34 +34,50 @@ export class PurchasingPagesOrderController {
    async getAllPPO(@Res() res){
       try{
          const allPPO = await this.PPOService.findAll()
-         if(!allPPO) return res.status(HttpStatus.NOT_FOUND).json({message: 'No purchasing page order was found'})
-         return res.status(HttpStatus.OK).json(allPPO)
+         if(!allPPO.length){
+            this.response.initResponse(false, 'No purchasing page order was found', null)
+            return res.status(HttpStatus.NOT_FOUND).json(this.response)
+         }
+         this.response.initResponse(true, 'Get purchasing page orders successfully', allPPO)
+         return res.status(HttpStatus.OK).json(this.response)
       }
       catch(err){
-         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: `Get purchasing page orders unsuccessfully`, ERROR: `${err}`})
+         this.response.initResponse(false, `Get purchasing page orders unsuccessfully, ERROR: ${err}`, null)
+         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response)
       }
    }
+
    @Get(':id')
    async getPPO(@Param('id') id: string, @Res() res){
       try{
          const PPO = await this.PPOService.findOne(id)
-         if(!PPO) return res.status(HttpStatus.NOT_FOUND).json({message: `Purchasing page order with id ${id} not found`})
-         return res.status(HttpStatus.OK).json(PPO)
+         if(!PPO){
+            this.response.initResponse(false, `Purchasing page order was not found`, null)
+            return res.status(HttpStatus.NOT_FOUND).json(this.response)
+         }
+         this.response.initResponse(true, 'Get purchasing page order successfully', PPO)
+         return res.status(HttpStatus.OK).json(this.response)
       }
       catch(err){
-         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: `Get purchasing page order unsuccessfully`, ERROR: `${err}`})
+         this.response.initResponse(false, `Get purchasing page order unsuccessfully, ERROR: ${err}`, null)
+         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response)
       }
    }
    
    @Patch(':id')
-   async updatePPO(@Param('id') id: string, @Body() data: PurchasingPagesOrder, @Res() res){
+   async updatePPO(@Param('id') id: string, @Body() data: UpdatePPODto, @Res() res){
       try{
          const update =  await this.PPOService.update(id, data)
-         if(!update[0])  return res.status(HttpStatus.NOT_FOUND).json({message: `Purchasing page order with id ${id} not found`})
-         return res.status(HttpStatus.OK).json({message: 'Purchasing page order updated successfully'})
+         if(!update[0]){
+            this.response.initResponse(false, `Purchasing page order was not found`,null)
+            return res.status(HttpStatus.NOT_FOUND).json(this.response)
+         }
+         this.response.initResponse(true, 'Purchasing page order updated successfully', null)
+         return res.status(HttpStatus.OK).json(this.response)
       }
       catch(err){
-         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: `Updated purchasing page order unsuccessfully`, ERROR: `${err}`})
+         this.response.initResponse(false, `Updated purchasing page order unsuccessfully, ERROR: ${err}`, null)
+         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response)
       }
    }
 
@@ -56,11 +85,16 @@ export class PurchasingPagesOrderController {
    async deletePPO(@Param('id') id: string, @Res() res){
       try{
          const deleted =  await this.PPOService.delete(id)
-         if(!deleted) return res.status(HttpStatus.NOT_FOUND).json({message: `Purchasing page order with id ${id} not found`})
-         return res.status(HttpStatus.OK).json({message: 'Purchasing page order deleted successfully'})
+         if(!deleted){
+            this.response.initResponse(false, `Purchasing page order was not found`, null)
+            return res.status(HttpStatus.NOT_FOUND).json(this.response)
+         }
+         this.response.initResponse(true, 'Purchasing page order deleted successfully', null)
+         return res.status(HttpStatus.OK).json(this.response)
       }
       catch(err){
-         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: `Delete purchasing page order unsuccessfully`, ERROR: `${err}`})
+         this.response.initResponse(false, `Delete purchasing page order unsuccessfully, ERROR: ${err}`, null)
+         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response)
       }
    }
 }

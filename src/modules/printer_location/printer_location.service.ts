@@ -1,5 +1,7 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { PrinterLocation } from "./printer_location.entity";
+import { CreatePrinterLocationDto } from './dtos/printer_locationCreate.Dto';
+import { UpdatePrinterLocationDto } from './dtos/printer_locationUpdate.Dto';
 import { PRINTER_LOCATION_REPOSITORY } from "src/common/contants";
 
 @Injectable()
@@ -7,34 +9,28 @@ export class PrinterLocationService{
    constructor(@Inject(PRINTER_LOCATION_REPOSITORY) private readonly printerLocationRepository: typeof PrinterLocation) {}
 
    //Create
-   async create(data : PrinterLocation){
+   async create(data : CreatePrinterLocationDto){
       await this.printerLocationRepository.create(data)
    }
+
    //Read
    async findAll(){
-      const locationArr = this.printerLocationRepository.findAll()
-      if(!locationArr) throw new NotFoundException(`No printer location was found`)
+      const locationArr = await this.printerLocationRepository.findAll()
       return locationArr
    }
+
    async findOne(id: string){
-      const location =  this.printerLocationRepository.findByPk(id)
-      if(!location) throw new NotFoundException(`Location with id ${id} not found`)
+      const location =  await this.printerLocationRepository.findByPk(id)
       return location
-   }
+   } 
+
    //Update
-   async update(id: string, data: PrinterLocation){
-      const location = await this.printerLocationRepository.findByPk(id);
-      if(!location){
-         throw new NotFoundException(`Location with id ${id} not found`);
-      }
-      return this.printerLocationRepository.update(data, { where: { id } });
+   async update(id: string, data: UpdatePrinterLocationDto){
+      return await this.printerLocationRepository.update(data, { where: { id } });
    }
+
    //Delete
    async delete(id: string){
-      const location = await this.printerLocationRepository.findByPk(id);
-      if (!location) {
-        throw new NotFoundException(`Location with id ${id} not found`);
-      }
-      return this.printerLocationRepository.destroy({ where: { id } });
+      return await this.printerLocationRepository.destroy({ where: { id } });
    }
 }

@@ -1,19 +1,26 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, Res, HttpStatus } from '@nestjs/common';
 import { PrinterLocationService } from './printer_location.service';
-import { PrinterLocation } from './printer_location.entity';
+import { CreatePrinterLocationDto } from './dtos/printer_locationCreate.Dto';
+import { UpdatePrinterLocationDto } from './dtos/printer_locationUpdate.Dto';
+import { Response } from '../response/response.entity';
 
 @Controller('printer_location')
 export class PrinterLocationController {
-   constructor(private readonly printerlocationService : PrinterLocationService){}
+   constructor(
+      private readonly printerlocationService : PrinterLocationService,
+      private readonly response: Response
+   ){}
 
    @Post()
-   async createPrinterLocation(@Body() data: PrinterLocation, @Res() res){
+   async createPrinterLocation(@Body() data: CreatePrinterLocationDto, @Res() res){
       try{
          await this.printerlocationService.create(data)
-         return res.status(HttpStatus.CREATED).json({message : 'Successfully created printer location'})
+         this.response.initResponse(true, 'Successfully created printer location', null)
+         return res.status(HttpStatus.CREATED).json(this.response)
       }
       catch(err){
-         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: `Create printer location unsuccessfully`, ERROR: `${err}`})
+         this.response.initResponse(false, `Create printer location unsuccessfully, ERROR: ${err}`, null)
+         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response)
       }
    }
 
@@ -21,33 +28,50 @@ export class PrinterLocationController {
    async getAllPrinterLocation(@Res() res){
       try{
          const getAllPrinterLocation = await this.printerlocationService.findAll()
-         if(!getAllPrinterLocation) return res.status(HttpStatus.NOT_FOUND).json({message: 'No printer location was found'})
-         return res.status(HttpStatus.OK).json(getAllPrinterLocation)
+         if(!getAllPrinterLocation){
+            this.response.initResponse(false, 'No printer location was found', null)
+            return res.status(HttpStatus.NOT_FOUND).json(this.response)
+         }
+         this.response.initResponse(true, "Get printers successfully", getAllPrinterLocation)
+         return res.status(HttpStatus.OK).json(this.response)
       }
       catch(err){
-         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: `Get printer locations unsuccessfully`, ERROR: `${err}`})
+         this.response.initResponse(false, `Get printer locations unsuccessfully, ERROR: ${err}`,null)
+         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response)
       }
    }
+
    @Get(':id')
    async getPrinterLocation(@Param('id') id: string, @Res() res){
       try{
          const printerLocation = await this.printerlocationService.findOne(id)
-         if(!printerLocation) return res.status(HttpStatus.NOT_FOUND).json({message: `Printer location with id: ${id} not found`})
-         return res.status(HttpStatus.OK).json(printerLocation)
+         if(!printerLocation){
+            this.response.initResponse(false, `Printer location was not found`, null)
+            return res.status(HttpStatus.NOT_FOUND).json(this.response)
+         }
+         this.response.initResponse(true, "Get printer location successfully", printerLocation)
+         return res.status(HttpStatus.OK).json(this.response)
       }
       catch(err){
-         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: `Get printer location unsuccessfully`, ERROR: `${err}`})
+         this.response.initResponse(false, `Get printer location unsuccessfully, ERROR: ${err}`,null)
+         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response)
       }
    }
+
    @Patch(':id')
-   async updatePrinterLocation(@Param('id') id: string, @Body() data: PrinterLocation, @Res() res){
+   async updatePrinterLocation(@Param('id') id: string, @Body() data: UpdatePrinterLocationDto, @Res() res){
       try{
          const update =  await this.printerlocationService.update(id, data)
-         if(!update[0])  return res.status(HttpStatus.NOT_FOUND).json({message: `Printer location with id ${id} not found`})
-         return res.status(HttpStatus.OK).json({message: 'Printer location updated successfully'})
+         if(!update[0]){
+            this.response.initResponse(false, `Printer location was not found`,null)
+            return res.status(HttpStatus.NOT_FOUND).json(this.response)
+         }
+         this.response.initResponse(true, 'Printer location updated successfully', null)
+         return res.status(HttpStatus.OK).json(this.response)
       }
       catch(err){
-         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: `Updated printer location unsuccessfully`, ERROR: `${err}`})
+         this.response.initResponse(false, `Updated printer location unsuccessfully, ERROR: ${err}`, null)
+         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response)
       }
    }
 
@@ -55,11 +79,16 @@ export class PrinterLocationController {
    async deletePrinterLocation(@Param('id') id: string, @Res() res){
       try{
          const deleted =  await this.printerlocationService.delete(id)
-         if(!deleted) return res.status(HttpStatus.NOT_FOUND).json({message: `Printer with id ${id} not found`})
-         return res.status(HttpStatus.OK).json({message: 'Printer location deleted successfully'})
+         if(!deleted){
+            this.response.initResponse(false, `Printer was not found`, null)
+            return res.status(HttpStatus.NOT_FOUND).json(this.response)
+         }
+         this.response.initResponse(true, 'Printer location deleted successfully', null)
+         return res.status(HttpStatus.OK).json(this.response)
       }
       catch(err){
-         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: `Delete printer location unsuccessfully`, ERROR: `${err}`})
+         this.response.initResponse(false, `Delete printer location unsuccessfully, ERROR: ${err}`,null)
+         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response)
       }
    }
 }
