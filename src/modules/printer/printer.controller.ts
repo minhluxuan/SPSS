@@ -1,19 +1,26 @@
 import { Body, Controller, Delete, Get, HttpStatus, Param, Patch, Post, Put, Query, Req, Res } from '@nestjs/common';
 import { PrinterService } from './printer.service';
-import { Printer } from './printer.entity';
+import { Response } from "src/modules/response/response.entity";
+import { CreatePrinterDto } from './dtos/createPrinter.Dto';
+import { UpdatePrinterDto } from './dtos/updatePrinter.Dto';
 
 @Controller('printer')
 export class PrinterController {
-   constructor(private readonly printerService : PrinterService){}
+   constructor(
+      private readonly response : Response,
+      private readonly printerService : PrinterService
+   ){}
 
    @Post()
-   async createPrinter(@Body() data: Printer, @Res() res){
+   async createPrinter(@Body() data: CreatePrinterDto, @Res() res){
       try{
          await this.printerService.create(data)
-         return res.status(HttpStatus.CREATED).json({message : 'Successfully created printer'})
+         this.response.initResponse(true, 'Successfully created printer', null)
+         return res.status(HttpStatus.CREATED).json(this.response)
       }
       catch(err){
-         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: `Create printer unsuccessfully`, ERROR: `${err}`})
+         this.response.initResponse(false, `Create printer unsuccessfully, ERROR: ${err}`, null)
+         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response)
       }
    }
 
@@ -21,34 +28,71 @@ export class PrinterController {
    async getAllPrinter(@Res() res){
       try{
          const allPrinter = await this.printerService.findAll()
-         if(!allPrinter) return res.status(HttpStatus.NOT_FOUND).json({message: 'No printer was found'})
-         return res.status(HttpStatus.OK).json(allPrinter)
+         if(allPrinter.length===0){
+            this.response.initResponse(false,'No printer was found', null)
+            return res.status(HttpStatus.NOT_FOUND).json(this.response)
+         }
+         this.response.initResponse(true,`Get printers successfully`, allPrinter)
+         return res.status(HttpStatus.OK).json(this.response)
       }
       catch(err){
-         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: `Get printers unsuccessfully`, ERROR: `${err}`})
+         this.response.initResponse(true,`Get printers unsuccessfully, ERROR:${err}`, null)
+         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response)
       }
    }
+
    @Get(':id')
    async getPrinter(@Param('id') id: string, @Res() res){
       try{
          const printer = await this.printerService.findOne(id)
-         if(!printer) return res.status(HttpStatus.NOT_FOUND).json({message: `Printer with id ${id} not found`})
-         return res.status(HttpStatus.OK).json(printer)
+         if(!printer){
+            this.response.initResponse(false, `Printer was not found`, null)
+            return res.status(HttpStatus.NOT_FOUND).json(this.response)
+         }
+         this.response.initResponse(true, `Printer was found`, printer)
+         return res.status(HttpStatus.OK).json(this.response)
       }
       catch(err){
          return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: `Get printer unsuccessfully`, ERROR: `${err}`})
       }
    }
-   
-   @Patch(':id')
-   async updatePrinter(@Param('id') id: string, @Body() data: Printer, @Res() res){
+   @Get('search')
+   async searchPrinter(
+      @Res() res,
+      @Query('name') name?: string,
+      @Query('brand') brand?: string,
+      @Query('location') location?: string,
+      @Query('active') active?: boolean
+   ){
       try{
-         const update =  await this.printerService.update(id, data)
-         if(!update[0])  return res.status(HttpStatus.NOT_FOUND).json({message: `Printer with id ${id} not found`})
-         return res.status(HttpStatus.OK).json({message: 'Printer updated successfully'})
+         const Printers = await this.printerService.search(name, brand, location, active)
+         if(Printers.length===0){
+            this.response.initResponse(false,'No printer was found', null)
+            return res.status(HttpStatus.NOT_FOUND).json(this.response)
+         }
+         this.response.initResponse(true,`Get printers successfully`, Printers)
+         return res.status(HttpStatus.OK).json(this.response)
       }
       catch(err){
-         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: `Updated printer unsuccessfully`, ERROR: `${err}`})
+         this.response.initResponse(true,`Get printers unsuccessfully, ERROR:${err}`, null)
+         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response)
+      }
+   }
+
+   @Patch(':id')
+   async updatePrinter(@Param('id') id: string, @Body() data: UpdatePrinterDto, @Res() res){
+      try{
+         const update =  await this.printerService.update(id, data)
+         if(!update[0]){
+            this.response.initResponse(false, `Printer was not found`, null)
+            return res.status(HttpStatus.NOT_FOUND).json(this.response)
+         }
+         this.response.initResponse(true, 'Printer updated successfully', null)
+         return res.status(HttpStatus.OK).json(this.response)
+      }
+      catch(err){
+         this.response.initResponse(false,`Updated printer unsuccessfully, ERROR: ${err}`, null)
+         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response)
       }
    }
 
@@ -56,11 +100,16 @@ export class PrinterController {
    async deletePrinter(@Param('id') id: string, @Res() res){
       try{
          const deleted =  await this.printerService.delete(id)
-         if(!deleted) return res.status(HttpStatus.NOT_FOUND).json({message: `Printer with id ${id} not found`})
-         return res.status(HttpStatus.OK).json({message: 'Printer deleted successfully'})
+         if(!deleted[0]){
+            this.response.initResponse(false, `Printer was not found`, null)
+            return res.status(HttpStatus.NOT_FOUND).json(this.response)
+         }
+         this.response.initResponse(true, 'Printer deleted successfully', null)
+         return res.status(HttpStatus.OK).json(this.response)
       }
       catch(err){
-         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message: `Delete printer unsuccessfully`, ERROR: `${err}`})
+         this.response.initResponse(false,  `Delete printer unsuccessfully, ERROR: ${err}`, null)
+         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response)
       }
    }
 }
