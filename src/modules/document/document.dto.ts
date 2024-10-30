@@ -1,5 +1,4 @@
 import { IsOptional, IsString, IsUUID, IsInt } from 'class-validator';
-import { UUID } from 'crypto';
 
 export class CreateDocumentDto {
   @IsOptional()
@@ -13,8 +12,4 @@ export class CreateDocumentDto {
   @IsOptional()
   @IsInt()
   numPages?: number;
-
-  @IsOptional()
-  @IsUUID()
-  customerId?: UUID;
 }

@@ -1,26 +1,26 @@
-import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Req, Res, UseGuards } from "@nestjs/common";
-import { DocumentService } from "./document.service";
-import { CreateDocumentDto } from "./document.dto";
-import { Response } from "../response/response.entity";
+import { Body, Controller, Delete, ForbiddenException, Get, HttpStatus, Param, Post, Put, Query, Req, Res, UseGuards } from "@nestjs/common";
+import { CustomerFeedbackService } from "./customerfeedback.service";
+import { CreateCustomerFeedbackDto } from "./customerfeedback.dto";
 import { JwtAuthGuard } from "src/common/guards/authenticate.guard";
+import { Response } from "../response/response.entity";
 
 @UseGuards(JwtAuthGuard)
-@Controller('document')
-export class DocumentController {
+@Controller('customerFeedback')
+export class CustomerFeedbackController {
     constructor(
-        private readonly documentService: DocumentService,
+        private readonly customerFeedbackService: CustomerFeedbackService,
         private readonly response: Response
     ) { }
 
     @Get('')
-    async getAllDocuments(@Res() res) {
+    async getAllCustomerFeedbacks(@Res() res) {
         try {
-            const document = await this.documentService.getAllDocuments();
-            if (!document) {
+            const customerFeedback = await this.customerFeedbackService.getAllCustomerFeedbacks();
+            if (!customerFeedback) {
                 this.response.initResponse(false, "An error occurs. Please try again", null);
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
             }
-            this.response.initResponse(true, "Get all successfully", document);
+            this.response.initResponse(true, "Get all successfully", customerFeedback);
             return res.status(HttpStatus.OK).json(this.response);
         } catch (error) {
             console.error(error);
@@ -29,38 +29,16 @@ export class DocumentController {
         }
     }
 
-    @Get('search')
-    async searchDocument(
-        @Res() res,
-        @Req() req,
-        @Query('name') name?: string,
-        @Query('mimeType') mimeType?: string,
-        @Query('numPages') numPages?: number
-    ) {
-        try {
-            const document = await this.documentService.searchDocuments(name, mimeType, numPages);
-            if (!document) {
-                this.response.initResponse(false, "An error occurs. Please try again", null);
-                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
-            }
-            this.response.initResponse(true, "Get all successfully", document);
-            return res.status(HttpStatus.OK).json(this.response);
-        } catch (error) {
-            console.error(error);
-            this.response.initResponse(false, "An error occurs. Please try again", null);
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
-        }
-    }
 
     @Get(':id')
-    async getDocumentById(@Res() res, @Req() req, @Param('id') id: string) {
+    async getCustomerFeedbackById(@Res() res, @Req() req, @Param('id') id: string) {
         try {
-            const document = await this.documentService.getDocumentById(id);
-            if (!document) {
+            const customerFeedback = await this.customerFeedbackService.getCustomerFeedbackById(id);
+            if (!customerFeedback) {
                 this.response.initResponse(false, "An error occurs. Please try again", null);
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
             }
-            this.response.initResponse(true, "Get successfully", document);
+            this.response.initResponse(true, "Get successfully", customerFeedback);
             return res.status(HttpStatus.OK).json(this.response);
         } catch (error) {
             console.error(error);
@@ -71,14 +49,14 @@ export class DocumentController {
 
 
     @Post('')
-    async createDocument(@Body() data: CreateDocumentDto, @Res() res, @Req() req) {
+    async createCustomerFeedback(@Body() data: CreateCustomerFeedbackDto, @Res() res, @Req() req) {
         try {
-            const document = await this.documentService.createDocument(data, req.user.id);
-            if (!document) {
+            const customerFeedback = await this.customerFeedbackService.createCustomerFeedback(data, req.user.id);
+            if (!customerFeedback) {
                 this.response.initResponse(false, "An error occurs. Please try again", null);
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
             }
-            this.response.initResponse(true, "Create successfully", document);
+            this.response.initResponse(true, "Create successfully", customerFeedback);
             return res.status(HttpStatus.CREATED).json(this.response);
         } catch (error) {
             console.error(error);
@@ -87,20 +65,20 @@ export class DocumentController {
         }
     }
 
-    @Put(':documentId')
-    async updateDocument(@Param('documentId') id: string, @Body() data: CreateDocumentDto, @Res() res, @Req() req) {
+    @Put(':customerFeedbackId')
+    async updateCustomerFeedback(@Param('customerFeedbackId') id: string, @Body() data: CreateCustomerFeedbackDto, @Res() res, @Req() req) {
         try {
-            if (!await this.documentService.getDocumentByIdAndCustomerId(id, req.user.id)) {
+            if (!await this.customerFeedbackService.getCustomerFeedbackByIdAndCustomerId(id, req.user.id)) {
                 throw new ForbiddenException("User is not allowed to access this resource or Resourse doesn't exist");
             }
 
-            const document = await this.documentService.updateDocument(id, data);
-            if (!document) {
+            const customerFeedback = await this.customerFeedbackService.updateCustomerFeedback(id, data);
+            if (!customerFeedback) {
                 this.response.initResponse(false, "An error occurs. Please try again", null);
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
             }
 
-            this.response.initResponse(true, "Update successfully", document);
+            this.response.initResponse(true, "Update successfully", customerFeedback);
             return res.status(HttpStatus.OK).json(this.response);
         } catch (error) {
             console.error(error);
@@ -110,13 +88,13 @@ export class DocumentController {
     }
 
     @Delete(':id')
-    async deleteDocument(@Param('id') id: string, @Res() res, @Req() req) {
+    async deleteCustomerFeedback(@Param('id') id: string, @Res() res, @Req() req) {
         try {
-            if (!await this.documentService.getDocumentByIdAndCustomerId(id, req.user.id)) {
+            if (!await this.customerFeedbackService.getCustomerFeedbackByIdAndCustomerId(id, req.user.id)) {
                 throw new ForbiddenException("User is not allowed to access this resource or Resourse doesn't exist");
             }
-            const document = await this.documentService.deleteDocument(id);
-            if (!document) {
+            const customerFeedback = await this.customerFeedbackService.deleteCustomerFeedback(id);
+            if (!customerFeedback) {
                 this.response.initResponse(false, "An error occurs. Please try again", null);
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
             }

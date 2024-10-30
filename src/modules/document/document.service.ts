@@ -1,99 +1,71 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import { DocumentRepository } from "./document.repository";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import { CreateDocumentDto } from "./document.dto";
-import { Response } from "../response/response.entity";
+import { Document } from "./document.entity";
+import { CustomerService } from "../user/services/customer.service";
+import { UUID } from "crypto";
 
 @Injectable()
 export class DocumentService {
     constructor(
-        private readonly documentRepository: DocumentRepository,
-        private readonly response: Response
+        @Inject('DOCUMENT_REPOSITORY')
+        private readonly documentModel: typeof Document
     ) { }
 
-    async getDocumentById(id: string) {
-        try {
-            const document = await this.documentRepository.getDocumentById(id);
-            if (!document) {
-                this.response.initResponse(false, "Could not get Document by Id.", null);
-                throw new HttpException(this.response, HttpStatus.BAD_REQUEST);
-            }
-            this.response.initResponse(true, "Get Document by Id successfully.", { document });
-            return this.response;
-        } catch (error) {
-            if (!(error instanceof HttpException)) {
-                this.response.initResponse(false, "An unexpected error occurred.", null);
-                throw new HttpException(this.response, HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-            throw error;
+    async getAllDocuments(): Promise<Document[]> {
+        return this.documentModel.findAll();
+    }
+
+    async searchDocuments(
+        name?: string,
+        mimeType?: string,
+        numPages?: number
+    ): Promise<Document[]> {
+        const whereClause: any = {};
+
+        if (name) {
+            whereClause['name'] = name;
         }
+
+        if (mimeType) {
+            whereClause['mimeType'] = mimeType;
+        }
+
+        if (numPages) {
+            whereClause['numPages'] = numPages;
+        }
+
+        return this.documentModel.findAll({
+            where: whereClause
+        });
+    }
+
+    async getDocumentById(id: string) {
+        return await this.documentModel.findByPk(id)
+    }
+
+    async getDocumentByIdAndCustomerId(id: string, customerId: UUID) {
+        return await this.documentModel.findOne({where:{id, customerId}})
     }
 
     async getDocumentsByPage(pageNumber: number, pageSize: number) {
-        try {
-            const offset = (pageNumber - 1) * pageSize;
-            const documents = await this.documentRepository.getDocumentsByPage(pageSize, offset);
-            if (!documents) {
-                this.response.initResponse(false, "Could not get Document by Page.", null);
-                throw new HttpException(this.response, HttpStatus.INTERNAL_SERVER_ERROR);
+        const offset = (pageNumber - 1) * pageSize
+        return await this.documentModel.findAll(
+            {
+                limit: pageSize,
+                offset: offset
             }
-            this.response.initResponse(true, "Get Document by Page successfully.", documents);
-            return this.response;
-        } catch (error) {
-            throw error;
-        }
+        )
     }
 
-    async createDocument(data: CreateDocumentDto) {
-        try {
-            const user = await this.documentRepository.findUser(data.customerId)
-            if (!user) {
-                this.response.initResponse(false, "Could not create Document (Customer is not in database).", null);
-                throw new HttpException(this.response, HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-            const document = await this.documentRepository.createDocument(data);
-            if (!document) {
-                this.response.initResponse(false, "Could not create Document.", null);
-                throw new HttpException(this.response, HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-            this.response.initResponse(true, "Create Document successfully.", document)
-            return this.response;
-        } catch (error) {
-            throw error;
-        }
+    async createDocument(data: CreateDocumentDto, id: UUID) {
+        return await this.documentModel.create({ ...data, customerId: id });
     }
 
     async updateDocument(id: string, data: CreateDocumentDto) {
-        try {
-            const availableDocument = await this.documentRepository.getDocumentById(id)
-            if (!availableDocument) {
-                this.response.initResponse(false, "Could not update Document (Invalid Id).", null);
-                throw new HttpException(this.response, HttpStatus.BAD_REQUEST);
-            }
-            const user = await this.documentRepository.findUser(data.customerId)
-            if (!user) {
-                this.response.initResponse(false, "Could not create Document (Customer is not in database).", null);
-                throw new HttpException(this.response, HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-            const updatedDocument = await this.documentRepository.updateDocument(availableDocument, data);
-            this.response.initResponse(true, "Update Document successfully.", updatedDocument);
-            return this.response;
-        } catch (error) {
-            throw error;
-        }
+        return await this.documentModel.update(data, { where: { id } })
     }
 
     async deleteDocument(id: string) {
-        try {
-            const document = await this.documentRepository.getDocumentById(id);
-            if (!document) {
-                this.response.initResponse(false, "Document not found.", null);
-                throw new HttpException(this.response, HttpStatus.NOT_FOUND);
-            }
-            await this.documentRepository.deleteDocument(id);
-            this.response.initResponse(true, "Document deleted successfully.", null);
-            return this.response;
-        } catch (error) {
-            throw error;
-        }
+        return await this.documentModel.destroy({ where: { id } })
     }
 }
