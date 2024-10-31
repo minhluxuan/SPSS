@@ -3,6 +3,7 @@ import { CustomerFeedbackService } from "./customerfeedback.service";
 import { CreateCustomerFeedbackDto } from "./customerfeedback.dto";
 import { JwtAuthGuard } from "src/common/guards/authenticate.guard";
 import { Response } from "../response/response.entity";
+import { Role } from "src/common/contants";
 
 @UseGuards(JwtAuthGuard)
 @Controller('customerFeedback')
@@ -13,7 +14,7 @@ export class CustomerFeedbackController {
     ) { }
 
     @Get('')
-    async getAllCustomerFeedbacks(@Res() res) {
+    async getAllCustomerFeedbacks(@Res() res, @Req() req) {
         try {
             const customerFeedback = await this.customerFeedbackService.getAllCustomerFeedbacks();
             if (!customerFeedback) {
@@ -51,6 +52,7 @@ export class CustomerFeedbackController {
     @Post('')
     async createCustomerFeedback(@Body() data: CreateCustomerFeedbackDto, @Res() res, @Req() req) {
         try {
+            if (req.user.role !== Role.CUSTOMER) {throw new ForbiddenException("User's role is not allowed to use this.")}
             const customerFeedback = await this.customerFeedbackService.createCustomerFeedback(data, req.user.id);
             if (!customerFeedback) {
                 this.response.initResponse(false, "An error occurs. Please try again", null);
@@ -68,6 +70,7 @@ export class CustomerFeedbackController {
     @Put(':customerFeedbackId')
     async updateCustomerFeedback(@Param('customerFeedbackId') id: string, @Body() data: CreateCustomerFeedbackDto, @Res() res, @Req() req) {
         try {
+            if (req.user.role !== Role.CUSTOMER) {throw new ForbiddenException("User's role is not allowed to use this.")}
             if (!await this.customerFeedbackService.getCustomerFeedbackByIdAndCustomerId(id, req.user.id)) {
                 throw new ForbiddenException("User is not allowed to access this resource or Resourse doesn't exist");
             }
@@ -90,6 +93,7 @@ export class CustomerFeedbackController {
     @Delete(':id')
     async deleteCustomerFeedback(@Param('id') id: string, @Res() res, @Req() req) {
         try {
+            if (req.user.role !== Role.CUSTOMER) {throw new ForbiddenException("User's role is not allowed to use this.")}
             if (!await this.customerFeedbackService.getCustomerFeedbackByIdAndCustomerId(id, req.user.id)) {
                 throw new ForbiddenException("User is not allowed to access this resource or Resourse doesn't exist");
             }

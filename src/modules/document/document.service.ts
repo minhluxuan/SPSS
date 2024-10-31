@@ -47,16 +47,6 @@ export class DocumentService {
         return await this.documentModel.findOne({where:{id, customerId}})
     }
 
-    async getDocumentsByPage(pageNumber: number, pageSize: number) {
-        const offset = (pageNumber - 1) * pageSize
-        return await this.documentModel.findAll(
-            {
-                limit: pageSize,
-                offset: offset
-            }
-        )
-    }
-
     async createDocument(data: CreateDocumentDto, id: UUID) {
         return await this.documentModel.create({ ...data, customerId: id });
     }
