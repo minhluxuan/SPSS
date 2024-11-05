@@ -18,6 +18,7 @@ import { CustomerLocalStrategy } from './strategies/customer_local.strategy';
 		signOptions: { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION },
 }), DatabaseModule],
     providers: [...userProvider, AuthService, SpsoService, CustomerService, JwtStrategy, CustomerLocalStrategy, SpsoLocalStrategy],
-    controllers: [AuthController]
+    controllers: [AuthController],
+    exports: [...userProvider, AuthService]
 })
 export class UserModule {}

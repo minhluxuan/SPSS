@@ -1,7 +1,7 @@
 import { UUID } from "crypto";
 import { UUIDV4 } from "sequelize";
 import { Column, DataType, Default, HasMany, Model, PrimaryKey, Table, Unique } from "sequelize-typescript";
-import { SPSPOnFeedback } from "../feedback/spso_on_feedback.entity";
+import { SPSPOnFeedback } from "../feedback/entities/spso_on_feedback.entity";
 
 @Table
 export class SPSO extends Model<SPSO> {

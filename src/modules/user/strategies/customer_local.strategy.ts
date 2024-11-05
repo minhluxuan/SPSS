@@ -22,7 +22,7 @@ export class CustomerLocalStrategy extends PassportStrategy(Strategy, 'customer-
 
     async validate(identifier: string, password: string): Promise<any>{
         const user = await this.authService.validateCustomer(identifier, password);
-		console.log(await bcrypt.hash(password, 10));
+
         if (!user) {
          	throw new UnauthorizedException('Invalid user credentials');
         }

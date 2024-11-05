@@ -1,7 +1,7 @@
 import { UUID } from "crypto";
 import { UUIDV4 } from "sequelize";
-import { BelongsTo, Column, DataType, Default, ForeignKey, Model, PrimaryKey, Table } from "sequelize-typescript";
-import { Printer } from "./printer.entity";
+import { Column, DataType, Default, HasMany, Model, PrimaryKey, Table } from "sequelize-typescript";
+import { Printer } from "../printer/printer.entity";
 
 @Table
 export class PrinterLocation extends Model<PrinterLocation> {
@@ -19,10 +19,6 @@ export class PrinterLocation extends Model<PrinterLocation> {
     @Column(DataType.STRING)
     room: string;
 
-    @ForeignKey(() => Printer)
-    @Column(DataType.UUID)
-    printerId: UUID;
-
-    @BelongsTo(() => Printer)
-    printer: Printer;
+    @HasMany(() => Printer)
+    printer: Printer[];
 }

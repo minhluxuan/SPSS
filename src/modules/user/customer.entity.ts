@@ -4,7 +4,7 @@ import { Table, Model, PrimaryKey, Default, DataType, Column, Unique, HasMany } 
 import { PurchasingPagesOrder } from "../purchasing_pages_order/purchasing_pages_order.entity";
 import { PrintingOrder } from "../printing_order/printing_order.entity";
 import { Document } from "../document/document.entity";
-import { Feedback } from "../feedback/feedback.entity";
+import { Feedback } from "../feedback/entities/feedback.entity";
 
 @Table
 export class Customer extends Model<Customer> {

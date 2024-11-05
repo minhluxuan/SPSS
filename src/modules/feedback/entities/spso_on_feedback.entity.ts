@@ -1,5 +1,5 @@
 import { Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
-import { SPSO } from "../user/spso.entity";
+import { SPSO } from "../../user/spso.entity";
 import { UUID } from "crypto";
 import { Feedback } from "./feedback.entity";
 

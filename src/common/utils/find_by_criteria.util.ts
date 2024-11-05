@@ -151,7 +151,7 @@ export async function findByCriteria<T extends Model>(
 
   let findOptions: FindOptions = {
     where: {
-      id: {
+      [primaryKeyField]: {
         [Op.in]: [...primaryKeyValues],
       }
     },

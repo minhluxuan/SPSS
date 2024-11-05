@@ -5,11 +5,11 @@ import { Customer } from 'src/modules/user/customer.entity';
 import { SPSO } from 'src/modules/user/spso.entity';
 import { Printer } from 'src/modules/printer/printer.entity';
 import { Document } from 'src/modules/document/document.entity';
-import { Feedback } from 'src/modules/feedback/feedback.entity';
-import { SPSPOnFeedback } from 'src/modules/feedback/spso_on_feedback.entity';
+import { Feedback } from 'src/modules/feedback/entities/feedback.entity';
+import { SPSPOnFeedback } from 'src/modules/feedback/entities/spso_on_feedback.entity';
 import { PrintingOrder } from 'src/modules/printing_order/printing_order.entity';
 import { PurchasingPagesOrder } from 'src/modules/purchasing_pages_order/purchasing_pages_order.entity';
-import { PrinterLocation } from 'src/modules/printer/printer_location.entity';
+import { PrinterLocation } from 'src/modules/printer_location/printer_location.entity';
 
 export const databaseProviders = [
   {
@@ -30,7 +30,7 @@ export const databaseProviders = [
           config = databaseConfig.development;
       }
       const sequelize = new Sequelize(config);
-      sequelize.addModels([SPSO, Customer, Printer, Document, Feedback, SPSPOnFeedback, PrintingOrder, PurchasingPagesOrder, PrinterLocation]);
+      sequelize.addModels([SPSO, Customer, Printer, Document, Feedback, SPSPOnFeedback, PrintingOrder, PrinterLocation, PurchasingPagesOrder]);
       await sequelize.sync();
 
       try {

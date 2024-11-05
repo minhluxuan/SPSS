@@ -16,12 +16,16 @@ export class PrintingOrder extends Model<PrintingOrder> {
     @Column(DataType.TINYINT)
     numFaces: number;
 
+    // Ban dau gui len bang pending
+    @Default('PENDING')
     @Column({
         type: DataType.ENUM(...Object.keys(PrintingStatus)),
         allowNull: false
     })
     printingStatus: PrintingStatus;
 
+    // Ban dau gui len bang pending
+    @Default('PENDING')
     @Column({
         type: DataType.ENUM(...Object.keys(PurchasingStatus)),
         allowNull: false
@@ -47,12 +51,14 @@ export class PrintingOrder extends Model<PrintingOrder> {
     document: Document;
 
     @ForeignKey(() => Printer)
-    printerId: Printer;
+    @Column(DataType.UUID)
+    printerId: UUID;
 
     @BelongsTo(() => Printer)
     printer: Printer;
 
     @ForeignKey(() => Customer)
+    @Column(DataType.UUID)
     customerId: UUID;
 
     @BelongsTo(() => Customer)

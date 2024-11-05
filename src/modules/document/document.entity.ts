@@ -19,6 +19,9 @@ export class Document extends Model<Document> {
     @Column(DataType.INTEGER)
     numPages: number;
 
+    @Column(DataType.STRING)
+    path: string;
+
     @ForeignKey(() => Customer)
     @Column(DataType.UUID)
     customerId: UUID;

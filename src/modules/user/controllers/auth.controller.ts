@@ -1,4 +1,4 @@
-import { Controller, ForbiddenException, Get, HttpStatus, Post, Req, Res, UseGuards } from "@nestjs/common";
+import { Controller, ForbiddenException, Get, HttpException, HttpStatus, InternalServerErrorException, Post, Req, Res, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { AuthService } from "../services/auth.service";
 import { Response } from "src/modules/response/response.entity";

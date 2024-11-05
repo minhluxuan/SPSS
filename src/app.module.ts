@@ -8,10 +8,13 @@ import { FeedbackModule } from './modules/feedback/feedback.module';
 import { DocumentModule } from './modules/document/document.module';
 import { PrintingOrderModule } from './modules/printing_order/printing_order.module';
 import { PrinterModule } from './modules/printer/printer.module';
+import { StorageModule } from './modules/storage/storage.module';
+import { PrinterLocationModule } from './modules/printer_location/printer_location.module';
+import { appProviders } from './app.provider';
 
 @Module({
-  imports: [DatabaseModule, UserModule, PurchasingPagesOrderModule, FeedbackModule, DocumentModule, PrintingOrderModule, PrinterModule],
+  imports: [DatabaseModule, UserModule, PurchasingPagesOrderModule, FeedbackModule, DocumentModule, PrintingOrderModule, PrinterModule, StorageModule, PrinterLocationModule],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, ...appProviders],
 })
 export class AppModule {}

@@ -14,6 +14,11 @@ export class PurchasingPagesOrder extends Model<PurchasingPagesOrder> {
     @Column(DataType.FLOAT)
     cost: number;
 
+    @Default(0)
+    @Column(DataType.INTEGER)
+    numPages: number;
+
+    @Default(PurchasingStatus.PENDING)
     @Column({
         type: DataType.ENUM(...Object.values(PurchasingStatus)),
         allowNull: false,
