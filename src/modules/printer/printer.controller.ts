@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpStatus, Param, Patch, Post, Put, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpStatus, Param, Patch, Post, Put, Query, Req, Res, UseGuards, UsePipes } from '@nestjs/common';
 import { PrinterService } from './printer.service';
 import { Response } from "src/modules/response/response.entity";
 import { CreatePrinterDto } from './dtos/createPrinter.Dto';
@@ -8,6 +8,7 @@ import { AuthorizeGuard } from 'src/common/guards/authorize.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { Role } from 'src/common/contants';
 import { SearchPayload } from 'src/common/interfaces/search_payload.interface';
+import { ValidateInputPipe } from 'src/common/pipes/validate.pipe';
 
 @Controller('printer')
 export class PrinterController {
@@ -18,6 +19,7 @@ export class PrinterController {
 
 	@UseGuards(JwtAuthGuard, AuthorizeGuard)
 	@Roles(Role.SPSO)
+	@UsePipes(ValidateInputPipe)
 	@Post('create')
 	async createPrinter(@Body() data: CreatePrinterDto, @Res() res){
 		try{
@@ -31,7 +33,7 @@ export class PrinterController {
 		}
 	}
 
-	@Get(':id')
+	@Get('search/:id')
 	async getPrinter(@Param('id') id: string, @Res() res){
 		try{
 			const printer = await this.printerService.findOne(id)
@@ -64,9 +66,12 @@ export class PrinterController {
 		}
 	}
 
-	@Patch(':id')
+	@UseGuards(JwtAuthGuard, AuthorizeGuard)
+	@Roles(Role.SPSO)
+	@UsePipes(ValidateInputPipe)
+	@Patch('update/:id')
 	async updatePrinter(@Param('id') id: string, @Body() data: UpdatePrinterDto, @Res() res){
-		try{
+		try {
 			const update =  await this.printerService.update(id, data)
 			if(!update[0]){
 				this.response.initResponse(false, `Printer was not found`, null)
@@ -75,15 +80,15 @@ export class PrinterController {
 			this.response.initResponse(true, 'Printer updated successfully', null)
 			return res.status(HttpStatus.OK).json(this.response)
 		}
-		catch(err){
+		catch(err) {
 			this.response.initResponse(false,`Updated printer unsuccessfully, ERROR: ${err}`, null)
 			return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response)
 		}
 	}
 
-	@Delete(":id")
+	@Delete("delete/:id")
 	async deletePrinter(@Param('id') id: string, @Res() res){
-		try{
+		try {
 			const deleted =  await this.printerService.delete(id)
 			if(!deleted[0]){
 				this.response.initResponse(false, `Printer was not found`, null)

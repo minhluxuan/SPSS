@@ -1,11 +1,14 @@
-import { BadRequestException, Inject,Injectable, NotAcceptableException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Inject,Injectable, NotAcceptableException, NotFoundException } from "@nestjs/common";
 import { PrintingOrder } from "../printing_order.entity";
-import { PaperOrientation, PaperSize, PrintingStatus, PurchasingStatus, ORDER_REPOSITORY, DOCUMENT_REPOSITORY, PRINTER_REPOSITORY } from "src/common/contants"; 
+import { PaperOrientation, PaperSize, PrintingStatus, PurchasingStatus, ORDER_REPOSITORY, DOCUMENT_REPOSITORY, PRINTER_REPOSITORY, CUSTOMER_REPOSITORY } from "src/common/contants"; 
 import { CreateOrderDto } from "../dtos/create_order.dto";
 import { UpdateOrderDto } from "../dtos/update_order.dto";
 import { UUID } from "crypto";
 import { Document } from "src/modules/document/document.entity";
 import { Printer } from "src/modules/printer/printer.entity";
+import { SearchPayload } from "src/common/interfaces/search_payload.interface";
+import { findByCriteria } from "src/common/utils/find_by_criteria.util";
+import { Customer } from "src/modules/user/customer.entity";
 
 @Injectable()
 export class PrintingOrderService{
@@ -13,11 +16,18 @@ export class PrintingOrderService{
         @Inject(ORDER_REPOSITORY) 
         private readonly printingOrderModel : typeof PrintingOrder,
         @Inject(DOCUMENT_REPOSITORY) private readonly documentRepository: typeof Document,
-        @Inject(PRINTER_REPOSITORY) private readonly printerRepository: typeof Printer
+        @Inject(PRINTER_REPOSITORY) private readonly printerRepository: typeof Printer,
+        @Inject(CUSTOMER_REPOSITORY) private readonly customerRepository: typeof Customer
     ) {}
 
     async create(createOrderDto: CreateOrderDto, customerId: UUID): Promise <PrintingOrder>{
-        const existedDocument = await this.documentRepository.findByPk(createOrderDto.documentId, { attributes: ['id']});
+        const existedCustomer = await this.customerRepository.findByPk(customerId);
+
+        if (!existedCustomer) {
+            throw new ConflictException('Người dùng không tồn tại');
+        }
+
+        const existedDocument = await this.documentRepository.findByPk(createOrderDto.documentId, { attributes: ['id', 'numPages']});
 
         if (!existedDocument) {
             throw new BadRequestException('Document does not exist');
@@ -29,13 +39,33 @@ export class PrintingOrderService{
             throw new BadRequestException('Printer does not exist')
         }
 
-        return await this.printingOrderModel.create({
+        if (existedCustomer.extraPages < existedDocument.numPages * (2 / createOrderDto.numFaces)) {
+            throw new BadRequestException('Your extra pages is not enough. Please purchase more.')
+        }
+
+        const createdPrintingOrder = await this.printingOrderModel.create({
             ...createOrderDto,
-            customerId
+            customerId,
+            purchasingStatus: PurchasingStatus.PAID
         });
+
+        console.log(existedCustomer.extraPages);
+        console.log(existedDocument.numPages);
+        console.log(createOrderDto.numFaces);
+
+        console.log(existedCustomer.extraPages - existedDocument.numPages * (2 / createOrderDto.numFaces));
+
+        await this.customerRepository.update({
+            extraPages: existedCustomer.extraPages - existedDocument.numPages * (2 / createOrderDto.numFaces)
+        }, {
+            where: { id: customerId }
+        });
+
+        return createdPrintingOrder;
     }
 
     async confirmStatus(id: UUID, status: PrintingStatus) {
+        console.log(status);
         const existedOrder = await this.printingOrderModel.findByPk(id);
 
         if (!existedOrder) {
@@ -58,109 +88,75 @@ export class PrintingOrderService{
         existedOrder.printingStatus = status;
         return await existedOrder.save();
     }
-
-    //System Service only
-    async updateOrderStatus(id: string, printingStatus: PrintingStatus, purchasingStatus: PurchasingStatus): Promise<PrintingOrder> {
+    
+    async update(id: string, updateOrderDto: UpdateOrderDto): Promise<PrintingOrder> {
         const order = await this.printingOrderModel.findByPk(id);
         if (!order) {
-            throw new Error('Order not found');
+            throw new NotFoundException('Order does not exist');
         }
-    
-        // Update only status
-        order.printingStatus = printingStatus ?? order.printingStatus;
-        order.purchasingStatus = purchasingStatus ?? order.purchasingStatus;
-    
-        try {
-            const savedOrder = await order.save();
 
-            if (savedOrder) {
-                return savedOrder; // Successfully updated
-            } else {
-                return null; // Save failed
-            }
-        } catch (error) {
-            console.error('Error saving the order:', error);
-            return null; // Save failed
+        if (order.printingStatus !== PrintingStatus.PENDING || order.purchasingStatus === PurchasingStatus.PENDING) {
+            throw new BadRequestException('Printing order is not allowed to update at this moment');
         }
-    }
-    
 
-    //User Service only
-    async updateOrder(id: string, updateOrderDto: UpdateOrderDto): Promise<PrintingOrder> {
-        const order = await this.printingOrderModel.findByPk(id);
-        if (!order) {
-            throw new Error('Order not found');
-        }
-        //Only updated if purchasing status and printing status is pending
-        if (order.printingStatus === PrintingStatus.PENDING && order.purchasingStatus === PurchasingStatus.PENDING) {
-            // Allow the user to update
-            order.numFaces = updateOrderDto.numFaces ?? order.numFaces;
-            order.size = updateOrderDto.size ?? order.size;
-            order.orientation = updateOrderDto.orientation ?? order.orientation;
-            try {
-                const savedOrder = await order.save();
+        order.numFaces = updateOrderDto.numFaces ?? order.numFaces;
+        order.size = updateOrderDto.size ?? order.size;
+        order.orientation = updateOrderDto.orientation ?? order.orientation;
+        const savedOrder = await order.save();
 
-                if (savedOrder) {
-                    return savedOrder; // Successfully updated
-                } else {
-                    return null; // Save failed
-                }
-            } catch (error) {
-                console.error('Error saving the order:', error);
-                return null; // Save failed
-            }
+        if (savedOrder) {
+            return savedOrder;
         } else {
-            console.log("Only be updated if purchasing status and printing status is pending");
             return null;
         }
     }
 
-    // SERVICE TIM KIEM
-
-    async findAllOrders(): Promise<PrintingOrder[]> {
-        return this.printingOrderModel.findAll();
-    }
-
-
-    async findOrderById(id: string): Promise<PrintingOrder> {
-        const order = await this.printingOrderModel.findByPk(id);
-        if (!order) {
-            throw new Error('Order not found');
-        }
+    async findById(id: string): Promise<PrintingOrder> {
+        const order = await this.printingOrderModel.findByPk(id, {
+            include: [
+                { model: Customer }
+            ]
+        });
         return order;
     }
 
-    async searchOrders(
-        printingStatus?: PrintingStatus,
-        purchasingStatus?: PurchasingStatus
-    ): Promise<PrintingOrder[]> {
-        const whereClause: any = {};
-
-        if (printingStatus) {
-            whereClause['printingStatus'] = printingStatus;
+    async searchByCustomer(payload: SearchPayload, customerId: UUID) {
+        if (!Array.isArray(payload.criteria)) {
+            payload.criteria = []
         }
 
-        if (purchasingStatus) {
-            whereClause['purchasingStatus'] = purchasingStatus;
-        }
-
-        return this.printingOrderModel.findAll({
-            where: whereClause
+        payload.criteria.push({
+            field: 'customerId',
+            operator: '=',
+            value: customerId
         });
-    }
-    ////
 
-    async deleteOrder(id: string): Promise<boolean> {
+        return await findByCriteria(payload.criteria, PrintingOrder, payload.addition, {
+            option: 'manual',
+            includeOption: []
+        }, null);
+    }
+
+    async search(payload: SearchPayload) {
+        if (!Array.isArray(payload.criteria)) {
+            payload.criteria = []
+        }
+
+        return await findByCriteria(payload.criteria, PrintingOrder, payload.addition, {
+            option: 'manual',
+            includeOption: []
+        }, null);
+    }
+
+    async destroy(id: UUID) {
         const order = await this.printingOrderModel.findByPk(id);
-        if (!order) {
-            console.log('Order not found');
-            return false;
+        
+        if (order) {
+            throw new NotFoundException('Order does not exist');
         }
-        try{
-            await order.destroy();
-            return true;
-        }catch(error){
-            return false;
-        }
+
+        await this.printingOrderModel.destroy({
+            where: { id }
+        });
     }
 }

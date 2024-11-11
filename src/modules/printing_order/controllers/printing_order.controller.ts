@@ -8,6 +8,7 @@ import { JwtAuthGuard } from 'src/common/guards/authenticate.guard';
 import { AuthorizeGuard } from 'src/common/guards/authorize.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UUID } from 'crypto';
+import { SearchPayload } from 'src/common/interfaces/search_payload.interface';
 @Controller('printing_order')
 export class PrintingOrderController {
     constructor(
@@ -15,47 +16,35 @@ export class PrintingOrderController {
         private readonly printingOrderService: PrintingOrderService
     ) {}
 
-    @Get()
-    async findAllOrders(@Res() res) {
-        try {
-            const order = await this.printingOrderService.findAllOrders();
-            if (!order){
-                this.response.initResponse(false, "An error occurs. Please try again", null);
-                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
-            }
-            this.response.initResponse(true, "Find all successfully", order);
-            return res.status(HttpStatus.OK).json(this.response);
-        } catch(error) {
-            console.log(error);
-            this.response.initResponse(false, "An error occurs. Please try again", null);
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
-        }
-    }
-    // Search by query printingStatus or purchasingStatus
-    @Get('search')
-    async searchOrders(
+    @UseGuards(JwtAuthGuard)
+    @Post('search')
+    async search(
+        @Req() req,
         @Res() res,
-        @Query('printingStatus') printingStatus?: PrintingStatus,
-        @Query('purchasingStatus') purchasingStatus?: PurchasingStatus, 
+        @Body() payload: SearchPayload
     ) {
         try {
-            const orders = await this.printingOrderService.searchOrders(printingStatus, purchasingStatus);
-            return res.status(200).json(orders);
+            let orders = [];
+            if (req.user.role === Role.CUSTOMER) {
+                orders = await this.printingOrderService.searchByCustomer(payload, req.user.id);
+            }
+            else {
+                orders = await this.printingOrderService.search(payload);
+            }
+
+            this.response.initResponse(true, 'Search orders successfully', orders);
+            return res.status(HttpStatus.OK).json(this.response);
         } catch (error) {
             console.error('Error searching for orders:', error);
-            return res.status(500).json({ success: false, message: 'Error searching for orders' });
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Error searching for orders' });
         }
     }
 
-    // GET /printing-orders/:id
-    @Get(':id')
-    async findOrderById(@Param('id') id: string, @Res() res) {
+    @UseGuards(JwtAuthGuard)
+    @Get('search/:id')
+    async findById(@Param('id') id: string, @Res() res) {
         try {
-            const order = await this.printingOrderService.findOrderById(id);
-            if (!order){
-                this.response.initResponse(false, "An error occurs. Please try again", null);
-                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
-            }
+            const order = await this.printingOrderService.findById(id);
             this.response.initResponse(true, "Find successfully", order);
             return res.status(HttpStatus.OK).json(this.response);
         } catch(error) {
@@ -87,10 +76,10 @@ export class PrintingOrderController {
     @UseGuards(JwtAuthGuard, AuthorizeGuard)
     @Roles(Role.SPSO)
     @Get('confirm_status')
-    async confirmDone(@Query('id') id: UUID, @Query('status') status: PrintingStatus, @Res() res) {
+    async confirmStatus(@Query('id') id: UUID, @Query('status') status: PrintingStatus, @Res() res) {
         try {
             const updatedOrder = await this.printingOrderService.confirmStatus(id, status);
-            this.response.initResponse(true, 'Xác nhận trạng thái đơn hàng thành công', updatedOrder);
+            this.response.initResponse(true, 'Confirm order status successfully', updatedOrder);
             return res.status(HttpStatus.CREATED).json(this.response);
         } catch (error) {
             if (error instanceof NotFoundException) {
@@ -104,41 +93,41 @@ export class PrintingOrderController {
         }
     }
 
-    @Put(':id')
+    @UseGuards(JwtAuthGuard)
+    @Put('udpate/:id')
     async updateOrder(
         @Param('id') id: string,
         @Body() updateOrderDto: UpdateOrderDto,
         @Res() res
     ) {
         try {
-            const update = await this.printingOrderService.updateOrder(id, updateOrderDto);
-            if (update == null){
-                this.response.initResponse(false, "An error occurs. Please try again", null);
-                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
-            } else if (update) {
-                this.response.initResponse(true, "Update successfully", update);
-                return res.status(HttpStatus.OK).json(this.response);
-            }
+            const update = await this.printingOrderService.update(id, updateOrderDto);
+            this.response.initResponse(true, "Update printing order successfully", update);
+            return res.status(HttpStatus.OK).json(this.response);
         } catch(error) {
+            if (error instanceof NotFoundException) {
+                this.response.initResponse(false, error.message, null);
+                return res.status(HttpStatus.NOT_FOUND).json(this.response);
+            }
+
             console.log(error);
             this.response.initResponse(false, "An error occurs. Please try again", null);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
         }
     }
 
-    @Delete(':id')
-    async deleteOrder(@Param('id') id: string, @Res() res) {
+    @Delete('delete/:id')
+    async deleteOrder(@Param('id') id: UUID, @Res() res) {
         try {
-            const del = await this.printingOrderService.deleteOrder(id);
-            if (del == false){
-                this.response.initResponse(false, "An error occurs. Please try again", null);
-                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
-            }
-            if (del == true){
-                this.response.initResponse(true, "Delete successfully", del);
-                return res.status(HttpStatus.OK).json(this.response);
-            }
+            await this.printingOrderService.destroy(id);
+            this.response.initResponse(true, 'Delete printing order successfully', null);
+            return res.status(HttpStatus.OK).json(this.response);
         } catch(error) {
+            if (error instanceof NotFoundException) {
+                this.response.initResponse(false, error.message, null);
+                return res.status(HttpStatus.NOT_FOUND).json(this.response);
+            }
+
             console.log(error);
             this.response.initResponse(false, "An error occurs. Please try again", null);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);

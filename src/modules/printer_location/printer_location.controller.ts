@@ -33,6 +33,7 @@ export class PrinterLocationController {
 		}
 	}
 
+	@UseGuards(JwtAuthGuard)
 	@Get()
 	async getAll(@Res() res){
 		try{
@@ -46,7 +47,7 @@ export class PrinterLocationController {
 		}
 	}
 
-	@Get(':id')
+	@Get('search/:id')
 	async getById(@Param('id') id: string, @Res() res){
 		try{
 			const printerLocation = await this.printerLocationService.findById(id)
@@ -63,9 +64,12 @@ export class PrinterLocationController {
 		}
 	}
 
-	@Patch(':id')
+	@UseGuards(JwtAuthGuard, AuthorizeGuard)
+	@Roles(Role.SPSO)
+	@UsePipes(ValidateInputPipe)
+	@Patch('update/:id')
 	async update(@Param('id') id: string, @Body() data: UpdatePrinterLocationDto, @Res() res){
-		try{
+		try {
 			const update =  await this.printerLocationService.update(id, data)
 			if(!update[0]){
 				this.response.initResponse(false, `Printer location was not found`,null)
@@ -80,7 +84,9 @@ export class PrinterLocationController {
 		}
 	}
 
-	@Delete(":id")
+	@UseGuards(JwtAuthGuard, AuthorizeGuard)
+	@Roles(Role.SPSO)
+	@Delete("delete/:id")
 	async destroy(@Param('id') id: string, @Res() res){
 		try{
 			const deleted =  await this.printerLocationService.destroy(id)

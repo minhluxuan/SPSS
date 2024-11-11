@@ -36,7 +36,7 @@ export class DocumentController {
                 documents = await this.documentService.searchBySPSO(payload);
             }
 
-            this.response.initResponse(true, "Get all successfully", documents);
+            this.response.initResponse(true, "Search documents successfully", documents);
             return res.status(HttpStatus.OK).json(this.response);
         } catch (error) {
             console.error(error);
@@ -66,7 +66,7 @@ export class DocumentController {
         @Res() res,
         @Req() req,
         @UploadedFiles(new CustomParseFilePipe({
-            maxSize: 5000000,
+            maxSize: 50000000,
             fileTypes: ['application/pdf']
         })) files: Express.Multer.File[]
     ) {

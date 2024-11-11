@@ -1,6 +1,6 @@
 import { Inject, Injectable, ConflictException, NotFoundException } from "@nestjs/common";
 import { PurchasingPagesOrder } from "./purchasing_pages_order.entity";
-import { PURCHASING_PAGES_ORDER_REPOSITORY } from "src/common/contants";
+import { CUSTOMER_REPOSITORY, PURCHASING_PAGES_ORDER_REPOSITORY, PurchasingStatus } from "src/common/contants";
 import { CreatePPODto } from './dtos/createPPO.Dto';
 import { UpdatePPODto } from './dtos/updatePPO.Dto';
 import { UUID } from "crypto";
@@ -11,17 +11,31 @@ import { NotFoundError } from "rxjs";
 
 @Injectable()
 export class PurchasingPagesOrderService{
-	constructor(@Inject(PURCHASING_PAGES_ORDER_REPOSITORY) private readonly purchasingPagesOrderRepository: 
-	typeof PurchasingPagesOrder) {}
+	constructor(
+		@Inject(PURCHASING_PAGES_ORDER_REPOSITORY) private readonly purchasingPagesOrderRepository : typeof PurchasingPagesOrder,
+		@Inject(CUSTOMER_REPOSITORY) private readonly customerRepository : typeof Customer
+	) {}
 
 	async create(dto : CreatePPODto, customerId: UUID) {
-		const cost = (dto.numPages * 1000) / 3;
+		const existedCustomer = await this.customerRepository.findByPk(customerId, { attributes: ['id', 'extraPages'] });
+		if (!existedCustomer) {
+			throw new ConflictException('Người dùng không tồn tại');
+		}
+
+		const cost = Math.floor((dto.numPages * 1000) / 3) + 1;
 		
-		return await this.purchasingPagesOrderRepository.create({
+		const createdPPO = await this.purchasingPagesOrderRepository.create({
 			...dto,
 			cost,
+			status: PurchasingStatus.PAID,
 			customerId
 		});
+
+		await this.customerRepository.update({
+			extraPages: existedCustomer.extraPages + dto.numPages
+		}, { where: { id: customerId } });
+
+		return createdPPO;
 	}
 
 	async search(payload: SearchPayload, customerId: UUID) {

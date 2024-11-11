@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, HttpStatus, Param, Post, Put, Query, Req, Res, UseGuards } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, HttpStatus, Param, Post, Put, Query, Req, Res, UseGuards, UsePipes } from "@nestjs/common";
 import { CustomerFeedbackService } from "../services/customer_feedback.service";
 import { CreateCustomerFeedbackDto } from "../dtos/customer_feedback.dto";
 import { JwtAuthGuard } from "src/common/guards/authenticate.guard";
@@ -8,6 +8,7 @@ import { AuthorizeGuard } from "src/common/guards/authorize.guard";
 import { Roles } from "src/common/decorators/roles.decorator";
 import { UUID } from "crypto";
 import { SearchPayload } from "src/common/interfaces/search_payload.interface";
+import { ValidateInputPipe } from "src/common/pipes/validate.pipe";
 
 @Controller('feedback')
 export class CustomerFeedbackController {
@@ -60,6 +61,7 @@ export class CustomerFeedbackController {
 
     @UseGuards(JwtAuthGuard, AuthorizeGuard)
     @Roles(Role.CUSTOMER)
+    @UsePipes(ValidateInputPipe)
     @Post('create')
     async create(@Body() dto: CreateCustomerFeedbackDto, @Res() res, @Req() req) {
         try {
@@ -75,6 +77,7 @@ export class CustomerFeedbackController {
 
     @UseGuards(JwtAuthGuard, AuthorizeGuard)
     @Roles(Role.CUSTOMER)
+    @UsePipes(ValidateInputPipe)
     @Put('update/:id')
     async update(@Param('id') id: UUID, @Body() dto: CreateCustomerFeedbackDto, @Res() res, @Req() req) {
         try {
