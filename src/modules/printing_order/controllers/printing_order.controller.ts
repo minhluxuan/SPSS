@@ -1,4 +1,4 @@
-import { Controller, HttpStatus, Post, Body, Get, Param, Patch, Delete, Put, Res, Query, UseGuards, Req, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Controller, HttpStatus, Post, Body, Get, Param, Patch, Delete, Put, Res, Query, UseGuards, Req, BadRequestException, NotFoundException, UsePipes } from '@nestjs/common';
 import { PrintingOrderService } from '../services/printing_order.service';
 import { Response } from "src/modules/response/response.entity";
 import { CreateOrderDto } from '../dtos/create_order.dto';
@@ -9,6 +9,8 @@ import { AuthorizeGuard } from 'src/common/guards/authorize.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UUID } from 'crypto';
 import { SearchPayload } from 'src/common/interfaces/search_payload.interface';
+import { GetReportDto } from '../dtos/get_report.dto';
+import { ValidateInputPipe } from 'src/common/pipes/validate.pipe';
 @Controller('printing_order')
 export class PrintingOrderController {
     constructor(
@@ -87,6 +89,11 @@ export class PrintingOrderController {
                 return res.status(HttpStatus.NOT_FOUND).json(this.response);
             }
 
+            if (error instanceof BadRequestException) {
+                this.response.initResponse(false, error.message, null);
+                return res.status(HttpStatus.BAD_REQUEST).json(this.response);
+            }
+
             console.log(error);
             this.response.initResponse(false, "An error occurs. Please try again", null);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
@@ -134,4 +141,23 @@ export class PrintingOrderController {
         }
     }
 
+    @UsePipes(ValidateInputPipe)
+    @UsePipes(ValidateInputPipe)
+    @Post('report')
+    async getReport(@Body() dto: GetReportDto, @Res() res) {
+        try {
+            const report = await this.printingOrderService.getPrinterReport(dto.printerId, { day: dto.day, month: dto.month } );
+            this.response.initResponse(true, 'Get report successfully', report);
+            return res.status(HttpStatus.OK).json(this.response);
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                this.response.initResponse(false, error.message, null);
+                return res.status(HttpStatus.NOT_FOUND).json(this.response);
+            }
+
+            console.log(error);
+            this.response.initResponse(false, "An error occurs. Please try again", null);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.response);
+        }
+    }
 }

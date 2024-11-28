@@ -8,6 +8,11 @@ import { PrintingOrderProvider } from './printing_order.provider';
 import { PrinterModule } from '../printer/printer.module';
 import { DocumentModule } from '../document/document.module';
 import { UserModule } from '../user/user.module';
+import { SequelizeModule } from '@nestjs/sequelize';
+import { PrintingOrder } from './printing_order.entity';
+import { Printer } from '../printer/printer.entity';
+import { Customer } from '../user/customer.entity';
+import { Document } from '../document/document.entity';
 
 @Module({
     imports:[ResponseModule, JwtModule.register({

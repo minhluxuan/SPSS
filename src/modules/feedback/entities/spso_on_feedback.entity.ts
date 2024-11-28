@@ -1,4 +1,4 @@
-import { Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
 import { SPSO } from "../../user/spso.entity";
 import { UUID } from "crypto";
 import { Feedback } from "./feedback.entity";
@@ -21,4 +21,7 @@ export class SPSPOnFeedback extends Model<SPSPOnFeedback> {
 
     @Column(DataType.TEXT)
     content: string;
+
+    @BelongsTo(() => Feedback)
+    feedback: Feedback;
 }

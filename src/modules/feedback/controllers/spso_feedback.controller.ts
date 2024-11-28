@@ -65,7 +65,6 @@ export class SpsoFeedbackController {
     @UsePipes(ValidateInputPipe)
     @Post('create')
     async create(@Body() dto: CreateSpsoFeedbackDto, @Res() res, @Req() req) {
-        console.log(req.user.role);
         try {
             const customerFeedback = await this.spsoFeedbackService.create(dto, req.user.id);
             this.response.initResponse(true, "Create feedback response successfully", customerFeedback);

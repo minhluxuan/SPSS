@@ -1,7 +1,8 @@
 import { UUID } from "crypto";
 import { UUIDV4 } from "sequelize";
-import { BelongsTo, Column, DataType, Default, ForeignKey, Model, PrimaryKey, Table } from "sequelize-typescript";
+import { BelongsTo, Column, DataType, Default, ForeignKey, HasMany, Model, PrimaryKey, Table } from "sequelize-typescript";
 import { Customer } from "../user/customer.entity";
+import { PrintingOrder } from "../printing_order/printing_order.entity";
 
 @Table
 export class Document extends Model<Document> {
@@ -28,4 +29,7 @@ export class Document extends Model<Document> {
 
     @BelongsTo(() => Customer)
     customer: Customer;
+
+    @HasMany(() => PrintingOrder)
+    printingOrders: PrintingOrder[];
 }

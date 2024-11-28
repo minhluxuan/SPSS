@@ -69,15 +69,15 @@ export class PrinterController {
 	@UseGuards(JwtAuthGuard, AuthorizeGuard)
 	@Roles(Role.SPSO)
 	@UsePipes(ValidateInputPipe)
-	@Patch('update/:id')
+	@Put('update/:id')
 	async updatePrinter(@Param('id') id: string, @Body() data: UpdatePrinterDto, @Res() res){
 		try {
-			const update =  await this.printerService.update(id, data)
-			if(!update[0]){
-				this.response.initResponse(false, `Printer was not found`, null)
+			const updatedPrinter =  await this.printerService.update(id, data)
+			if(!updatedPrinter){
+				this.response.initResponse(false, `Printer was not found`, updatedPrinter);
 				return res.status(HttpStatus.NOT_FOUND).json(this.response)
 			}
-			this.response.initResponse(true, 'Printer updated successfully', null)
+			this.response.initResponse(true, 'Printer updated successfully', updatedPrinter)
 			return res.status(HttpStatus.OK).json(this.response)
 		}
 		catch(err) {

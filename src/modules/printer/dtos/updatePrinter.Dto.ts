@@ -1,17 +1,20 @@
-import { IsNotEmpty, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
 import { UUID } from 'crypto';
 
 export class UpdatePrinterDto{
+   @IsOptional()
    @IsNotEmpty()
    name?: string;
 
+   @IsOptional()
    @IsNotEmpty()
    brand?: string;
 
+   @IsOptional()
    @IsNotEmpty()
    active?: boolean;
 
-   @IsNotEmpty()
+   @IsOptional()
    @IsUUID()
    locationId?: UUID;
 }

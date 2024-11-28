@@ -29,7 +29,8 @@ export class PrinterService{
 	}
 
 	async update(id: string, dto: UpdatePrinterDto){
-		return await this.printerRepository.update(dto, { where: { id } });
+		await this.printerRepository.update(dto, { where: { id } });
+		return await this.findOne(id);
 	}
 
 	async delete(id: string){

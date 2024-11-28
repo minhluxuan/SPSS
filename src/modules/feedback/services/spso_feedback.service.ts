@@ -66,7 +66,7 @@ export class SpsoFeedbackService {
         }
 
         payload.criteria.push({
-            field: 'customer.customerId',
+            field: 'feedback.customerId',
             operator: '=',
             value: customerId
         });
@@ -74,7 +74,7 @@ export class SpsoFeedbackService {
         return findByCriteria(payload.criteria, SPSPOnFeedback, payload.addition, {
             option: 'manual',
             includeOption: [{
-                model: Customer
+                model: Feedback
             }]
         }, null);
     }
